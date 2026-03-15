@@ -1,56 +1,82 @@
-This module documents my deep exploration of STM32 Timers using register-level programming.
+⏱️ STM32 Timer Programming (Register-Level)
 
-Timers are one of the most powerful peripherals in microcontrollers and are used in:
+This module documents my deep exploration of STM32 timers using register-level programming.
 
-Motor control
+Timers are among the most powerful peripherals in microcontrollers and are widely used in real-time embedded systems.
 
-Robotics
+Typical applications include:
 
-Flight controllers
+🚁 Drone flight controllers
 
-Signal measurement
+🤖 Robotics systems
 
-Real-time systems
+⚙️ Motor control
 
-Sensor timing
+📡 Signal measurement
 
-This module covers:
+⏱️ Real-time scheduling
 
-Timer architecture
+🎛️ Sensor timing
 
-PWM generation
+This repository focuses on understanding timers from hardware level without using HAL libraries.
 
-Timer interrupts
+📚 Topics Covered
 
-Input capture
-
-RC receiver decoding
-
-Output compare
-
-Encoder interface
-
-Advanced PWM
+This module covers the following concepts:
 
 Timer Architecture
 
-Timers internally follow this pipeline:
+Timer Registers
 
-System Clock
-     ↓
-Prescaler (PSC)
-     ↓
-Counter (CNT)
-     ↓
-Auto Reload Register (ARR)
-     ↓
-Compare Register (CCR)
-     ↓
-Event / PWM / Interrupt
+Timer Clock Calculation
 
-The timer counts clock pulses and generates events when conditions are met.
+PWM Generation
 
-Important Timer Registers
+Timer Interrupts
+
+Input Capture
+
+RC Receiver Signal Decoding
+
+Output Compare Mode
+
+Encoder Interface
+
+Advanced PWM (TIM1 / TIM8)
+
+⚙️ Timer Architecture
+
+STM32 timers internally follow a pipeline structure.
+
+           System Clock
+                │
+                ▼
+        Prescaler (PSC)
+                │
+                ▼
+          Counter (CNT)
+                │
+                ▼
+      Auto Reload Register (ARR)
+                │
+                ▼
+       Compare Register (CCR)
+                │
+                ▼
+       Event / PWM / Interrupt
+
+Explanation:
+
+Block	Function
+System Clock	Timer clock source
+Prescaler (PSC)	Divides clock frequency
+Counter (CNT)	Current counter value
+Auto Reload Register (ARR)	Maximum counter value
+Compare Register (CCR)	Used for PWM / events
+
+The timer continuously counts clock pulses and generates events when CNT matches CCR or overflows ARR.
+
+🧠 Important Timer Registers
 Register	Description
 CR1	Timer control register
 PSC	Prescaler register
@@ -59,21 +85,23 @@ CNT	Counter register
 CCR1-CCR4	Compare registers
 DIER	Interrupt enable register
 SR	Status register
-Timer Clock Calculation
 
-Timer frequency:
+These registers control timer operation, interrupts, and PWM outputs.
+
+⏲️ Timer Clock Calculation
+
+Timer frequency is calculated as:
 
 Timer Clock = Fclk / (PSC + 1)
 
 Example:
 
 Fclk = 72 MHz
-PSC = 71
-
+PSC  = 71
 Timer Clock = 72MHz / 72
 Timer Clock = 1 MHz
 
-Timer period:
+Timer period formula:
 
 T = (PSC + 1) × (ARR + 1) / Fclk
 
@@ -82,20 +110,22 @@ Example:
 PSC = 71
 ARR = 999
 
-Timer Period = 1 ms
-PWM Generation
+Result:
 
-PWM (Pulse Width Modulation) controls power using digital signals.
+Timer Period = 1 ms
+🌊 PWM Generation
+
+PWM (Pulse Width Modulation) controls power using digital pulses.
 
 Applications:
 
 Motor speed control
 
-LED brightness
+LED brightness control
 
 Servo control
 
-ESC control in drones
+Drone ESC control
 
 Duty cycle formula:
 
@@ -105,9 +135,13 @@ Example:
 
 ARR = 1000
 CCR = 500
-
 Duty Cycle = 50%
-PWM Register Level Example
+PWM Waveform
+HIGH   ────────        ────────
+        │               │
+        │               │
+LOW  ___│_______________│______
+🧾 Register Level PWM Example
 #include "stm32f10x.h"
 
 void PWM_Init()
@@ -118,15 +152,15 @@ void PWM_Init()
     // Enable TIM2 clock
     RCC->APB1ENR |= (1<<0);
 
-    // PA0 as alternate function push-pull
+    // Configure PA0 as alternate function push-pull
     GPIOA->CRL &= ~(0xF<<0);
     GPIOA->CRL |= (0xB<<0);
 
     // Prescaler
-    TIM2->PSC = 71;     // Timer clock = 1MHz
+    TIM2->PSC = 71;     
 
     // Auto reload
-    TIM2->ARR = 999;    // PWM frequency = 1kHz
+    TIM2->ARR = 999;    
 
     // PWM mode 1
     TIM2->CCMR1 |= (6<<4);
@@ -140,43 +174,47 @@ void PWM_Init()
     // Start timer
     TIM2->CR1 |= 1;
 }
-Timer Interrupt
+🔔 Timer Interrupts
 
 Timer interrupts allow periodic execution of code.
 
 Flow:
 
-Counter overflow
-↓
-Update event
-↓
-UIF flag set
-↓
-NVIC interrupt
-↓
-ISR executed
+Counter Overflow
+        │
+        ▼
+   Update Event
+        │
+        ▼
+    UIF Flag Set
+        │
+        ▼
+   NVIC Interrupt
+        │
+        ▼
+   ISR Executed
 
 Registers used:
 
 Register	Function
 DIER	Enable interrupt
 SR	Interrupt flag
-NVIC	Enable CPU interrupt
-Timer Interrupt Example
+NVIC	CPU interrupt controller
+Interrupt Example
 void TIM2_IRQHandler()
 {
     if(TIM2->SR & (1<<0))
     {
-        TIM2->SR &= ~(1<<0); // clear flag
+        TIM2->SR &= ~(1<<0);
 
         // periodic task here
     }
 }
-Input Capture
+📡 Input Capture
 
 Input capture measures timing of external signals.
 
-Examples:
+Applications:
 
 PWM measurement
 
@@ -188,14 +226,17 @@ RC receiver signals
 
 Working principle:
 
-External signal
-↓
-Edge detection
-↓
-Counter value captured
-↓
-Stored in CCR register
-RC Receiver Signal
+External Signal
+       │
+       ▼
+   Edge Detection
+       │
+       ▼
+Counter Value Captured
+       │
+       ▼
+ Stored in CCR Register
+🎮 RC Receiver Signals
 
 Typical RC PWM signals:
 
@@ -211,11 +252,11 @@ CH1	Roll
 CH2	Pitch
 CH3	Throttle
 CH4	Yaw
-Output Compare Mode
+🎯 Output Compare Mode
 
-Output compare triggers events when:
+Output compare generates events when:
 
-Counter == Compare register
+Counter == Compare Register
 
 Example:
 
@@ -234,18 +275,18 @@ Signal generation
 
 Hardware scheduling
 
-Encoder Interface Mode
+🔄 Encoder Interface Mode
 
-Timers can act as quadrature decoders for rotary encoders.
+STM32 timers can work as quadrature encoder decoders.
 
-Inputs:
+Connection:
 
 Encoder A → CH1
 Encoder B → CH2
 
 The timer automatically detects:
 
-Direction
+Rotation direction
 
 Position
 
@@ -253,19 +294,19 @@ Speed
 
 Counter behavior:
 
-Clockwise rotation → CNT++
-Anti-clockwise rotation → CNT--
+Clockwise Rotation      → CNT++
+Anti-clockwise Rotation → CNT--
 
 Encoder modes:
 
 Mode	Description
-Mode1	Count CH1 edges
-Mode2	Count CH2 edges
-Mode3	Count both edges
+Mode 1	Count CH1 edges
+Mode 2	Count CH2 edges
+Mode 3	Count both edges
 
-Mode3 gives highest resolution.
+Mode 3 provides highest resolution.
 
-Encoder Mode Register Example
+🔧 Encoder Mode Example
 void Encoder_Init()
 {
     RCC->APB2ENR |= (1<<2);
@@ -286,87 +327,125 @@ void Encoder_Init()
 
     TIM2->CR1 |= 1;
 }
-Drone Firmware Context
+🚁 Drone Firmware Context
 
-In drones timers are used for:
+Timers are heavily used in drone firmware.
 
-PWM motor control
-RC receiver input capture
-Control loop timing
-
-Typical control flow:
+Typical drone control pipeline:
 
 RC Receiver
-↓
+      │
+      ▼
 Flight Controller (STM32)
-↓
+      │
+      ▼
 PID Controller
-↓
+      │
+      ▼
 PWM Output
-↓
+      │
+      ▼
 ESC
-↓
+      │
+      ▼
 BLDC Motor
-Advanced PWM
 
-Advanced timers like TIM1 and TIM8 support advanced PWM features.
+Timers handle:
+
+Motor PWM control
+
+RC signal decoding
+
+Control loop timing
+
+⚡ Advanced PWM (TIM1 / TIM8)
+
+Advanced timers provide motor-control features.
 
 Features:
 
 Complementary PWM
 
-Dead time insertion
+Dead Time Insertion
 
-Center aligned PWM
+Center Aligned PWM
 
 Complementary PWM
 
 Used in motor driver circuits.
 
-PWM   → High side MOSFET
-PWMN  → Low side MOSFET
-Dead Time
+PWM   → High-side MOSFET
+PWMN  → Low-side MOSFET
 
-Prevents MOSFET shoot-through.
+Waveform:
 
 PWM   : |‾‾‾|____|‾‾‾|
 PWMN  : ____|‾‾‾|____|
+Dead Time
 
-Dead time ensures both switches never turn ON simultaneously.
+Dead time prevents MOSFET shoot-through.
+
+PWM   : |‾‾‾|____|‾‾‾|
+PWMN  : ____|‾‾‾|____|
+        ↑
+     Dead Time
+
+Both MOSFETs are never ON simultaneously.
 
 Center Aligned PWM
 
-Normal PWM:
+Normal PWM counting:
 
 0 → ARR → reset
 
-Center aligned PWM:
+Center aligned PWM counting:
 
 0 → ARR → 0
 
 Benefits:
 
-Lower noise
+Lower switching noise
 
 Better motor control
 
-Used in BLDC control
+Used in BLDC motor drivers
 
-Key Concepts Learned
+🧠 Key Concepts Learned
 
-This module covered:
+This module covers:
 
 Timer architecture
+
 Timer registers
+
 PWM generation
+
 Timer interrupts
+
 Input capture
+
 RC receiver decoding
+
 Output compare
+
 Encoder interface
+
 Advanced PWM
-Repository
 
-Complete UART, SPI and I2C register-level implementations are available in my repository:
+📦 Repository
 
-salvi2005/STM32
+Complete register-level implementations for:
+
+UART
+
+SPI
+
+I2C
+
+Timers
+
+are available in this repository:
+
+👉
+
+https://github.com/salvi2005/STM32
