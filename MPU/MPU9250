@@ -1,0 +1,47 @@
+#include "stm32f10x.h"
+#include <math.h>
+
+#define MPU9250_ADDR 0x68
+#define MAG_ADDR 0x0C
+
+float roll, pitch, yaw;
+float dt = 0.01;
+float alpha = 0.98;
+
+void MPU9250_Init()
+{
+    // Wake MPU
+    I2C_Write(MPU9250_ADDR, 0x6B, 0x00);
+
+    // Enable magnetometer
+    I2C_Write(MAG_ADDR, 0x0A, 0x16);
+}
+
+void MPU9250_Update()
+{
+    int16_t accX = I2C_Read16(MPU9250_ADDR, 0x3B);
+    int16_t accY = I2C_Read16(MPU9250_ADDR, 0x3D);
+    int16_t accZ = I2C_Read16(MPU9250_ADDR, 0x3F);
+
+    int16_t gyroX = I2C_Read16(MPU9250_ADDR, 0x43);
+    int16_t gyroY = I2C_Read16(MPU9250_ADDR, 0x45);
+
+    int16_t magX = I2C_Read16(MAG_ADDR, 0x03);
+    int16_t magY = I2C_Read16(MAG_ADDR, 0x05);
+
+    float accXf = accX / 16384.0;
+    float accYf = accY / 16384.0;
+    float accZf = accZ / 16384.0;
+
+    float roll_acc = atan2(accYf, accZf) * 57.3;
+    float pitch_acc = atan2(-accXf, sqrt(accYf*accYf + accZf*accZf)) * 57.3;
+
+    float gyroXf = gyroX / 131.0;
+    float gyroYf = gyroY / 131.0;
+
+    roll = alpha*(roll + gyroXf*dt) + (1-alpha)*roll_acc;
+    pitch = alpha*(pitch + gyroYf*dt) + (1-alpha)*pitch_acc;
+
+    // Yaw from magnetometer
+    yaw = atan2(magY, magX) * 57.3;
+}
